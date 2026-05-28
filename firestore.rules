@@ -1,0 +1,99 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Role-based helper functions
+    function userExists() {
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && userExists() && getUserData().role == 'admin';
+    }
+
+    function isManager() {
+      return isSignedIn() && userExists() && (getUserData().role == 'manager' || getUserData().role == 'admin');
+    }
+
+    // Staff means any user who is signed in and has a profile
+    function isStaff() {
+      return isSignedIn() && userExists();
+    }
+
+    // Users collection
+    match /users/{userId} {
+      allow read: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      allow create: if isSignedIn() && request.auth.uid == userId;
+      allow update: if isSignedIn() && (
+        (request.auth.uid == userId && incoming().role == existing().role) || 
+        isAdmin()
+      );
+      allow delete: if isAdmin();
+    }
+
+    // Buildings
+    match /buildings/{buildingId} {
+      allow read: if isStaff();
+      allow create: if isManager() && incoming().name is string && incoming().name.size() > 0;
+      allow update: if isManager();
+      allow delete: if isAdmin();
+    }
+
+    // Offices
+    match /offices/{officeId} {
+      allow read: if isStaff();
+      allow create: if isManager() && incoming().buildingId is string;
+      allow update: if isManager();
+      allow delete: if isAdmin();
+    }
+
+    // Tenants
+    match /tenants/{tenantId} {
+      allow read: if isStaff();
+      allow create: if isManager() && incoming().name is string;
+      allow update: if isManager();
+      allow delete: if isAdmin();
+    }
+
+    // Contracts
+    match /contracts/{contractId} {
+      allow read: if isStaff();
+      allow create: if isManager() && incoming().tenantId is string && incoming().officeId is string;
+      allow update: if isManager();
+      allow delete: if isAdmin();
+    }
+
+    // Invoices
+    match /invoices/{invoiceId} {
+      allow read: if isStaff();
+      allow create: if isManager() && incoming().contractId is string;
+      allow update: if isManager();
+      allow delete: if isAdmin();
+    }
+  }
+}

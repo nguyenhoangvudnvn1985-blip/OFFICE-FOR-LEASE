@@ -1,0 +1,93 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Represents a user account and their role.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "The firebase auth UID" },
+        "email": { "type": "string", "format": "email", "description": "The user email" },
+        "name": { "type": "string", "description": "Display name" },
+        "role": { "type": "string", "enum": ["admin", "manager", "staff"], "description": "The user access role" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "name", "role"]
+    },
+    "Building": {
+      "title": "Building",
+      "description": "Represents an office building.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Name of the building" },
+        "address": { "type": "string", "description": "Physical address" },
+        "description": { "type": "string", "description": "Brief description" },
+        "totalFloors": { "type": "number", "description": "Number of floors" }
+      },
+      "required": ["name", "address"]
+    },
+    "Office": {
+      "title": "Office",
+      "description": "A specific office unit or floor space.",
+      "type": "object",
+      "properties": {
+        "buildingId": { "type": "string", "description": "ID of the building" },
+        "floor": { "type": "number", "description": "Floor number" },
+        "roomNumber": { "type": "string", "description": "Room or unit number" },
+        "area": { "type": "number", "description": "Area in square meters" },
+        "pricePerMonth": { "type": "number", "description": "Rental price per month" },
+        "status": { "type": "string", "enum": ["available", "rented", "maintenance"] },
+        "description": { "type": "string" }
+      },
+      "required": ["buildingId", "floor", "roomNumber", "area", "pricePerMonth", "status"]
+    },
+    "Tenant": {
+      "title": "Tenant",
+      "description": "Information about the client renting the office.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Full name or representative" },
+        "email": { "type": "string", "format": "email" },
+        "phone": { "type": "string" },
+        "companyName": { "type": "string" },
+        "taxId": { "type": "string" }
+      },
+      "required": ["name", "email", "phone"]
+    },
+    "Contract": {
+      "title": "Contract",
+      "description": "Rental agreement between tenant and management.",
+      "type": "object",
+      "properties": {
+        "tenantId": { "type": "string" },
+        "officeId": { "type": "string" },
+        "startDate": { "type": "string", "format": "date-time" },
+        "endDate": { "type": "string", "format": "date-time" },
+        "price": { "type": "number" },
+        "deposit": { "type": "number" },
+        "status": { "type": "string", "enum": ["active", "expired", "terminated"] }
+      },
+      "required": ["tenantId", "officeId", "startDate", "endDate", "price", "status"]
+    },
+    "Invoice": {
+      "title": "Invoice",
+      "description": "Billing record for a contract.",
+      "type": "object",
+      "properties": {
+        "contractId": { "type": "string" },
+        "amount": { "type": "number" },
+        "dueDate": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["paid", "pending", "overdue"] },
+        "type": { "type": "string", "enum": ["rent", "electricity", "water", "service"] }
+      },
+      "required": ["contractId", "amount", "dueDate", "status", "type"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": { "schema": "User", "description": "Collection of user profiles containing roles" },
+    "/buildings/{buildingId}": { "schema": "Building", "description": "Collection of buildings" },
+    "/offices/{officeId}": { "schema": "Office", "description": "Collection of office units" },
+    "/tenants/{tenantId}": { "schema": "Tenant", "description": "Collection of tenants" },
+    "/contracts/{contractId}": { "schema": "Contract", "description": "Collection of rental contracts" },
+    "/invoices/{invoiceId}": { "schema": "Invoice", "description": "Collection of invoices" }
+  }
+}
